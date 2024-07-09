@@ -372,14 +372,55 @@ top_6_states_per_year |>
   ungroup() |>
   count(State)
 
+# Identify the states not in the top 6 electoral votes for each year
+states_not_top_6_per_year <- elections %>%
+  group_by(Year) %>%
+  mutate(rank = rank(-EC_votes, ties.method = "first")) %>%
+  filter(rank > 6)
 
+# Count the number of times the state winner matched the national winner and the number of times it did not for states not in top 6
+states_not_top_6_results <- states_not_top_6_per_year %>%
+  mutate(Match_National_Winner = ifelse(State_Winner == National_Winner, 1, 0)) %>%
+  group_by(Year) %>%
+  summarise(
+    Matches = sum(Match_National_Winner),
+    Non_Matches = n() - Matches
+  )
 
+# Count occurrences for states not in top 6 across all years
+states_not_top_6_count <- states_not_top_6_per_year %>%
+  ungroup() %>%
+  count(State) %>%
+  arrange(desc(n))
 
+# Print the results
+print(states_not_top_6_results, n = 26)
+print(states_not_top_6_count, n = 47)
 
+# Identify the states in the bottom 10 electoral votes for each year
+bottom_10_states_per_year <- elections %>%
+  group_by(Year) %>%
+  mutate(rank = rank(EC_votes, ties.method = "first")) %>%
+  filter(rank <= 10)
 
+# Count the number of times the state winner matched the national winner and the number of times it did not for bottom 10 states
+bottom_10_states_results <- bottom_10_states_per_year %>%
+  mutate(Match_National_Winner = ifelse(State_Winner == National_Winner, 1, 0)) %>%
+  group_by(Year) %>%
+  summarise(
+    Matches = sum(Match_National_Winner),
+    Non_Matches = n() - Matches
+  )
 
+# Count occurrences for bottom 10 states across all years
+bottom_10_states_count <- bottom_10_states_per_year %>%
+  ungroup() %>%
+  count(State) %>%
+  arrange(desc(n))
 
-
+# Print the results
+print(bottom_10_states_results, n = 26)
+print(bottom_10_states_count, n = 16)
 
 
 
