@@ -544,14 +544,15 @@ head(alignment_frequencies_df_bottom)
   # Plot using ggplot
   
   ggplot() +
-    geom_line(data = alignment_frequencies_df, aes(x = Bundle_Size, y = Frequency, color = "Top"), linewidth = 1) +
-    geom_point(data = alignment_frequencies_df, aes(x = Bundle_Size, y = Frequency, color = "Top")) +
-    geom_line(data = alignment_frequencies_df_bottom, aes(x = Bundle_Size, y = Frequency, color = "Bottom"), linewidth = 1) +
-    geom_point(data = alignment_frequencies_df_bottom, aes(x = Bundle_Size, y = Frequency, color = "Bottom")) +
-    labs(title = "Alignment Frequency of State Winners with National Winners",
+    geom_line(data = alignment_frequencies_df, aes(x = Bundle_Size, y = Frequency, color = "Top by EV"), linewidth = 1) +
+    geom_point(data = alignment_frequencies_df, aes(x = Bundle_Size, y = Frequency, color = "Top by EV")) +
+    geom_line(data = alignment_frequencies_df_bottom, aes(x = Bundle_Size, y = Frequency, color = "Bottom by EV"), linewidth = 1) +
+    geom_point(data = alignment_frequencies_df_bottom, aes(x = Bundle_Size, y = Frequency, color = "Bottom by EV")) +
+    labs(title = "National-State Winner Match Frequency",
          x = "Bundle Size (Number of States)",
-         y = "Alignment Frequency") +
-    scale_color_manual(values = c("Top" = "blue", "Bottom" = "red")) +  # Custom color palette
+         y = "Match (Alignment) Frequency") +
+    scale_color_manual(values = c("Top by EV" = "blue", 
+                                  "Bottom by EV" = "red")) +  # Custom color palette
     theme_minimal()
   
 
@@ -595,3 +596,9 @@ head(alignment_frequencies_df_bottom)
                                      "Average Alignment")
   
   View(alignment_summary_2)
+  
+  
+  
+  
+  
+  
