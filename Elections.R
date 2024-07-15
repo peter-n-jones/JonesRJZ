@@ -422,31 +422,164 @@ bottom_10_states_count <- bottom_10_states_per_year %>%
 print(bottom_10_states_results, n = 26)
 print(bottom_10_states_count, n = 16)
 
-#########testing below this line
-# Define a function to calculate alignment frequency
-calculate_alignment_frequency <- function(data, top_n) {
-  # Get top N states by EC votes for each year
-  top_n_states <- data %>%
+# find alignment frequency of top 48 bundles
+
+# Function to select top N states with hard cutoff for ties
+select_top_n_states <- function(df, n) {
+  df %>%
+    arrange(desc(EC_votes)) %>%
     group_by(Year) %>%
-    top_n(n = top_n, wt = EC_votes) %>%
+    slice_head(n = n) %>%
     ungroup()
-  
-  # Count how many times these states' winners align with the national winner
-  alignment_count <- top_n_states %>%
-    summarise(Aligned = sum(State_Winner == National_Winner, na.rm = TRUE)) %>%
-    pull(Aligned)
-  
-  total_count <- top_n_states %>%
-    summarise(Total = n()) %>%
-    pull(Total)
-  
-  frequency <- alignment_count / total_count
-  return(frequency)
 }
 
-# Calculate alignment frequencies for bundle sizes from 1 to 50
-bundle_sizes <- 1:50
-alignment_frequencies <- sapply(bundle_sizes, function(n) calculate_alignment_frequency(elections, n))
+# Create a function to calculate alignment frequency for each bundle size
+calculate_alignment_frequencies <- function(max_bundle_size) {
+  frequencies <- c()
+  
+  for (i in 1:max_bundle_size) {
+    # Select the top i states for each year with a hard cutoff
+    top_states <- elections %>%
+      group_by(Year) %>%
+      arrange(desc(EC_votes), .by_group = TRUE) %>%
+      mutate(rank = row_number()) %>%
+      filter(rank <= i) %>%
+      ungroup()
+    
+    # If there's a tie on the cutoff, randomly sample the required number of states
+    top_states <- top_states %>%
+      group_by(Year, rank) %>%
+      mutate(tie_group = ifelse(rank == i, sample(1:n(), 1), 1)) %>%
+      filter(tie_group == 1) %>%
+      ungroup()
+    
+    # Calculate alignment
+    top_states <- top_states %>%
+      mutate(Aligned = ifelse(State_Winner == National_Winner, TRUE, FALSE))
+    
+    alignment_freq <- top_states %>%
+      group_by(Year) %>%
+      summarise(Alignment_Percentage = mean(Aligned, na.rm = TRUE)) %>%
+      summarise(Frequency = mean(Alignment_Percentage, na.rm = TRUE))
+    
+    frequencies <- c(frequencies, alignment_freq$Frequency)
+  }
+  
+  data.frame(Bundle_Size = 1:max_bundle_size, Frequency = frequencies)
+}
 
-# Create a data frame for the graph
-alignment_df <- data.frame(Bundle_Size = bundle_sizes, Frequency = alignment_frequencies)
+# Calculate alignment frequencies for bundle sizes from 1 to 48
+alignment_frequencies_df <- calculate_alignment_frequencies(48)
+
+# Print the alignment frequencies data frame
+print(alignment_frequencies_df)
+
+ggplot(alignment_frequencies_df, aes(x = Bundle_Size, y = Frequency)) +
+  geom_point(color = "red") +                  # Add points
+  geom_line(color = "red") +                   # Connect points with lines
+  labs(title = "Alignment Frequency of Top Electoral Vote States",
+       x = "Number of Top Electoral Vote States (Bundled)",
+       y = "Alignment Frequency") +
+  theme_minimal()                 # Use a minimal theme for a clean look
+
+
+##now the bottom 48 bundles 
+# Function to select bottom N states with hard cutoff for ties
+select_bottom_n_states <- function(df, n) {
+  df %>%
+    arrange(EC_votes) %>%
+    group_by(Year) %>%
+    slice_head(n = n) %>%
+    ungroup()
+}
+
+# Create a function to calculate alignment frequency for each bundle size
+calculate_alignment_frequencies_bottom <- function(max_bundle_size) {
+  frequencies <- c()
+  
+  for (i in 1:max_bundle_size) {
+    # Select the bottom i states for each year with a hard cutoff
+    bottom_states <- elections %>%
+      group_by(Year) %>%
+      arrange(EC_votes, .by_group = TRUE) %>%
+      mutate(rank = row_number()) %>%
+      filter(rank <= i) %>%
+      ungroup()
+    
+    # If there's a tie on the cutoff, randomly sample the required number of states
+    bottom_states <- bottom_states %>%
+      group_by(Year, rank) %>%
+      mutate(tie_group = ifelse(rank == i, sample(1:n(), 1), 1)) %>%
+      filter(tie_group == 1) %>%
+      ungroup()
+    
+    # Calculate alignment
+    bottom_states <- bottom_states %>%
+      mutate(Aligned = ifelse(State_Winner == National_Winner, TRUE, FALSE))
+    
+    alignment_freq <- bottom_states %>%
+      group_by(Year) %>%
+      summarise(Alignment_Percentage = mean(Aligned, na.rm = TRUE)) %>%
+      summarise(Frequency = mean(Alignment_Percentage, na.rm = TRUE))
+    
+    frequencies <- c(frequencies, alignment_freq$Frequency)
+  }
+  
+  data.frame(Bundle_Size = 1:max_bundle_size, Frequency = frequencies)
+}
+
+# Calculate alignment frequencies for bundle sizes from 1 to 48 for bottom states
+alignment_frequencies_df_bottom <- calculate_alignment_frequencies_bottom(48)
+
+# Ensure Bundle_Size is treated as numeric for plotting
+alignment_frequencies_df_bottom$Bundle_Size <- as.numeric(alignment_frequencies_df_bottom$Bundle_Size)
+
+# Print the first few rows of alignment_frequencies_df_bottom
+head(alignment_frequencies_df_bottom)
+
+  # Ensure Bundle_Size is numeric for both data frames
+  alignment_frequencies_df$Bundle_Size <- as.numeric(as.character(alignment_frequencies_df$Bundle_Size))
+  alignment_frequencies_df_bottom$Bundle_Size <- as.numeric(as.character(alignment_frequencies_df_bottom$Bundle_Size))
+  
+  # Plot using ggplot
+  
+  ggplot() +
+    geom_line(data = alignment_frequencies_df, aes(x = Bundle_Size, y = Frequency, color = "Top"), linewidth = 1) +
+    geom_point(data = alignment_frequencies_df, aes(x = Bundle_Size, y = Frequency, color = "Top")) +
+    geom_line(data = alignment_frequencies_df_bottom, aes(x = Bundle_Size, y = Frequency, color = "Bottom"), linewidth = 1) +
+    geom_point(data = alignment_frequencies_df_bottom, aes(x = Bundle_Size, y = Frequency, color = "Bottom")) +
+    labs(title = "Alignment Frequency of State Winners with National Winners",
+         x = "Bundle Size (Number of States)",
+         y = "Alignment Frequency") +
+    scale_color_manual(values = c("Top" = "blue", "Bottom" = "red")) +  # Custom color palette
+    theme_minimal()
+  
+
+#### now swing state thing
+  
+  # how many swing states by either metric?
+  
+  sum(elections$Gap <= 1)
+  
+  sum(elections$Gap <= 2)
+
+  # Ensure Year is numeric
+  elections$Year <- as.numeric(elections$Year)
+  
+  # Sort by State and Year to ensure proper comparison
+  elections <- elections %>%
+    arrange(State, Year)
+  
+  # Create swing_state_1 (previous election)
+  elections$swing_state_1 <- c(FALSE, elections$State[-1] == 
+                                 elections$State[-nrow(elections)] & 
+                                 elections$Gap[-nrow(elections)] < 1)
+  
+  # Create swing_state_2
+  elections$swing_state_2 <- elections$Gap < 1
+  View(elections)
+
+  
+  
+  
+  
