@@ -580,11 +580,18 @@ head(alignment_frequencies_df_bottom)
   View(elections)
 
   # table with average alignment
+  alignment_summary_1 <- elections %>%
+    group_by(swing_state_1) %>%
+    summarise(Average_Alignment = mean(alignment, na.rm = TRUE))
+  colnames(alignment_summary_1) <- c("Swing State Defined by Previous Election Gap <1%", 
+                                     "Average Alignment")
+
   
-  alignment_summary <- elections %>%
-    group_by(swing_state_1, swing_state_2) %>%
-    summarise(Average_Alignment = mean(Alignment_Percentage, na.rm = TRUE))
+  # Calculate mean alignment for swing_state_2
+  alignment_summary_2 <- elections %>%
+    group_by(swing_state_2) %>%
+    summarise(Average_Alignment = mean(alignment, na.rm = TRUE))
+  colnames(alignment_summary_2) <- c("Swing State Defined by Current Election Gap <1%", 
+                                     "Average Alignment")
   
-  
-  
-  
+  View(alignment_summary_2)
