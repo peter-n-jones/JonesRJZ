@@ -422,8 +422,31 @@ bottom_10_states_count <- bottom_10_states_per_year %>%
 print(bottom_10_states_results, n = 26)
 print(bottom_10_states_count, n = 16)
 
+#########testing below this line
+# Define a function to calculate alignment frequency
+calculate_alignment_frequency <- function(data, top_n) {
+  # Get top N states by EC votes for each year
+  top_n_states <- data %>%
+    group_by(Year) %>%
+    top_n(n = top_n, wt = EC_votes) %>%
+    ungroup()
+  
+  # Count how many times these states' winners align with the national winner
+  alignment_count <- top_n_states %>%
+    summarise(Aligned = sum(State_Winner == National_Winner, na.rm = TRUE)) %>%
+    pull(Aligned)
+  
+  total_count <- top_n_states %>%
+    summarise(Total = n()) %>%
+    pull(Total)
+  
+  frequency <- alignment_count / total_count
+  return(frequency)
+}
 
+# Calculate alignment frequencies for bundle sizes from 1 to 50
+bundle_sizes <- 1:50
+alignment_frequencies <- sapply(bundle_sizes, function(n) calculate_alignment_frequency(elections, n))
 
-
-
-
+# Create a data frame for the graph
+alignment_df <- data.frame(Bundle_Size = bundle_sizes, Frequency = alignment_frequencies)
