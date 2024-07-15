@@ -579,6 +579,11 @@ head(alignment_frequencies_df_bottom)
   elections$swing_state_2 <- elections$Gap < 1
   View(elections)
 
+  # table with average alignment
+  
+  alignment_summary <- elections %>%
+    group_by(swing_state_1, swing_state_2) %>%
+    summarise(Average_Alignment = mean(Alignment_Percentage, na.rm = TRUE))
   
   
   
