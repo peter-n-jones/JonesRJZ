@@ -598,6 +598,55 @@ head(alignment_frequencies_df_bottom)
   View(alignment_summary_2)
   
   
+### LOAD IN POPULATION DATA
+  
+  # Load the dataset
+  population_data <- read.csv("population.csv")
+  population_data <- population_data[-1, ]
+  # Correct the column names
+  colnames(population_data) <- c("State", as.character(1900:2022))
+  
+  # Remove the row with NA values in 'State' column (if it exists)
+  population_data <- population_data[!is.na(population_data$State), ]
+  
+  # Convert all year columns to numeric
+  population_data <- population_data %>%
+    mutate(across(-State, as.numeric))
+  
+  # Reshape the data from wide to long format
+  long_population_data <- pivot_longer(
+    population_data,
+    cols = -State,
+    names_to = "Year",
+    values_to = "Population"
+  )
+  
+  # Remove the " (People)" part from state names
+  long_population_data <- long_population_data %>%
+    mutate(State = str_replace(State, " \\(People\\)", ""))
+  
+  # Create the State_Year column
+  long_population_data <- long_population_data %>%
+    mutate(State_Year = paste0(State, "_", Year))
+  
+  # Reorder the columns
+  long_population_data <- long_population_data %>%
+    select(State_Year, Population)
+  
+  #dont forget to rename DC and put in early population data for HI and AK
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
