@@ -595,8 +595,6 @@ head(alignment_frequencies_df_bottom)
   colnames(alignment_summary_2) <- c("Swing State Defined by Current Election Gap <1%", 
                                      "Average Alignment")
   
-  View(alignment_summary_2)
-  
   
 ### LOAD IN POPULATION DATA
   
@@ -653,10 +651,11 @@ head(alignment_frequencies_df_bottom)
   #Calculate total votes for significant candidates 
   national_votes <- elections |>
     mutate(State_Votes = Winner_Vote_Count + Second_Vote_Count)
-  national_votes <- elections |>
+  national_votes <- national_votes |>
     group_by(Year) |>
     summarise(National_Votes = sum(State_Votes))
-  
+  elections <- elections |>
+    left_join(national_votes, by = "Year")
   
   
   
