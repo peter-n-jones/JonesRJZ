@@ -640,14 +640,22 @@ head(alignment_frequencies_df_bottom)
   #match in pop
   long_population_data <- long_population_data %>%
     mutate(State.Year = toupper(str_trim(State.Year)))
-  
   elections <- left_join(elections, long_population_data, by = "State.Year")
   
-
+  # Calculate the national population for each year
+  national_population <- elections %>%
+    group_by(Year) %>%
+    summarise(National_Population = sum(Population, na.rm = TRUE))
+  # Merge the national population back into the original dataset
+  elections <- elections %>%
+    left_join(national_population, by = "Year")
   
-  
-  
-  
+  #Calculate total votes for significant candidates 
+  national_votes <- elections |>
+    mutate(State_Votes = Winner_Vote_Count + Second_Vote_Count)
+  national_votes <- elections |>
+    group_by(Year) |>
+    summarise(National_Votes = sum(State_Votes))
   
   
   
