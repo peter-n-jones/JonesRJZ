@@ -657,5 +657,17 @@ head(alignment_frequencies_df_bottom)
   elections <- elections |>
     left_join(national_votes, by = "Year")
   
+  #State Percentage Population Variables
+  elections <- elections |>
+    mutate(Pop_Frac = Population / National_Population)
+  elections <- elections |>
+    mutate(Voter_Frac = (Winner_Vote_Count + Second_Vote_Count) / National_Votes)
+  
+  
+  
+  
+  
+  
+  
   
   
