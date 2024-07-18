@@ -639,9 +639,8 @@ head(alignment_frequencies_df_bottom)
   
   #match in pop
   long_population_data <- long_population_data %>%
-    mutate(State.Year = toupper(State.Year))
-  long_population_data <- long_population_data %>%
-    filter(State.Year %in% elections$State.Year)
+    mutate(State.Year = toupper(str_trim(State.Year)))
+  
   elections <- left_join(elections, long_population_data, by = "State.Year")
   
 
