@@ -623,26 +623,28 @@ head(alignment_frequencies_df_bottom)
   
   # Remove the " (People)" part from state names
   long_population_data <- long_population_data %>%
-    mutate(State = str_replace(State, " \\(People\\)", ""))
+    mutate(State = str_replace(State, " \\(People\\)", "")) |>
+    mutate(State = str_replace(State, "District of Columbia", "DC"))
+
   
   # Create the State_Year column
   long_population_data <- long_population_data %>%
-    mutate(State_Year = paste0(State, "_", Year))
+    mutate(State.Year = paste0(State, "_", Year))
   
   # Reorder the columns
   long_population_data <- long_population_data %>%
-    select(State_Year, Population)
+    select(State.Year, Population)
   
-  #dont forget to rename DC and put in early population data for HI and AK
+  #put in early population data for HI and AK ??
   
+  #match in pop
+  long_population_data <- long_population_data %>%
+    mutate(State.Year = toupper(State.Year))
+  long_population_data <- long_population_data %>%
+    filter(State.Year %in% elections$State.Year)
+  elections <- left_join(elections, long_population_data, by = "State.Year")
   
-  
-  
-  
-  
-  
-  
-  
+
   
   
   
