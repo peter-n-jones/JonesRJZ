@@ -662,11 +662,32 @@ head(alignment_frequencies_df_bottom)
     mutate(Pop_Frac = Population / National_Population)
   elections <- elections |>
     mutate(Voter_Frac = (Winner_Vote_Count + Second_Vote_Count) / National_Votes)
+
+  
+## USE THESE TO CREATE NEW BUNDLES BASED ON POPN
+  
+  # Function to select top N states based on Pop_Frac with a hard cutoff for ties
+  select_top_n_states_by_pop_frac <- function(df, n) {
+    df %>%
+      arrange(Year, desc(Pop_Frac)) %>%
+      group_by(Year) %>%
+      slice(1:n) %>%
+      ungroup()
+  }
+  
+  # Create top bundles based on Pop_Frac
+  top_pop_bundles <- list()
+  
+  for (i in 1:48) {
+    top_pop_bundles[[i]] <- select_top_n_states_by_pop_frac(elections, i)
+  }
+  
+  # Combine the top bundles into one data frame and add a Bundle_Size column
+  top_pop_bundles_df <- bind_rows(top_pop_bundles, .id = "Bundle_Size")
+  top_pop_bundles_df$Bundle_Size <- as.integer(top_pop_bundles_df$Bundle_Size)
   
   
-  
-  
-  
+ 
   
   
   
