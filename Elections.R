@@ -788,9 +788,115 @@ head(alignment_frequencies_df_bottom)
          color = "Bundle Type") +
     theme_minimal()
   
+## NOW WITH VOTER FRAC
+  # Function to select top N states by Voter_Frac with hard cutoff for ties
+  select_top_n_states_voter <- function(df, n) {
+    df %>%
+      arrange(desc(Voter_Frac)) %>%
+      group_by(Year) %>%
+      slice_head(n = n) %>%
+      ungroup()
+  }
   
+  # Function to select bottom N states by Voter_Frac with hard cutoff for ties
+  select_bottom_n_states_voter <- function(df, n) {
+    df %>%
+      arrange(Voter_Frac) %>%
+      group_by(Year) %>%
+      slice_head(n = n) %>%
+      ungroup()
+  }
   
+  # Function to calculate alignment frequency for each bundle size using Voter_Frac
+  calculate_alignment_frequencies_voter <- function(max_bundle_size) {
+    top_frequencies <- c()
+    bottom_frequencies <- c()
+    top_bundle_pop_fracs <- c()
+    bottom_bundle_pop_fracs <- c()
+    
+    for (i in 1:max_bundle_size) {
+      # Top i states by Voter_Frac
+      top_states_voter <- select_top_n_states_voter(elections, i) %>%
+        mutate(Aligned = Winner_Match)
+      
+      top_alignment_freq <- top_states_voter %>%
+        group_by(Year) %>%
+        summarise(Alignment_Percentage = mean(Aligned, na.rm = TRUE)) %>%
+        summarise(Frequency = mean(Alignment_Percentage, na.rm = TRUE))
+      
+      top_frequencies <- c(top_frequencies, top_alignment_freq$Frequency)
+      
+      # Calculate the total Voter_Frac for top bundle size i
+      total_voter_frac_top <- top_states_voter %>%
+        group_by(Year) %>%
+        summarise(total = sum(Voter_Frac))
+      
+      # Calculate the bottom bundle states
+      bottom_states_voter <- elections %>%
+        arrange(Voter_Frac) %>%
+        group_by(Year) %>%
+        mutate(cumulative_frac = cumsum(Voter_Frac)) %>%
+        filter(cumulative_frac <= total_voter_frac_top$total[i])
+      
+      bottom_states_voter <- bottom_states_voter %>%
+        mutate(Aligned = Winner_Match)
+      
+      bottom_alignment_freq <- bottom_states_voter %>%
+        group_by(Year) %>%
+        summarise(Alignment_Percentage = mean(Aligned, na.rm = TRUE)) %>%
+        summarise(Frequency = mean(Alignment_Percentage, na.rm = TRUE))
+      
+      bottom_frequencies <- c(bottom_frequencies, bottom_alignment_freq$Frequency)
+      
+      # Calculate the Voter_Frac for the current bundle size
+      top_bundle_pop_frac <- top_states_voter %>%
+        group_by(Year) %>%
+        summarise(total = sum(Voter_Frac)) %>%
+        summarise(Bundle_Pop_Frac = mean(total))
+      
+      bottom_bundle_pop_frac <- bottom_states_voter %>%
+        group_by(Year) %>%
+        summarise(total = sum(Voter_Frac)) %>%
+        summarise(Bundle_Pop_Frac = mean(total))
+      
+      top_bundle_pop_fracs <- c(top_bundle_pop_fracs, top_bundle_pop_frac$Bundle_Pop_Frac)
+      bottom_bundle_pop_fracs <- c(bottom_bundle_pop_fracs, bottom_bundle_pop_frac$Bundle_Pop_Frac)
+    }
+    
+    # Create data frames for top and bottom bundles
+    top_bundles_df <- data.frame(Bundle_Size = 1:max_bundle_size, 
+                                 Alignment_Frequency = top_frequencies, 
+                                 Type = "Top Bundles", 
+                                 Bundle_Pop_Frac = top_bundle_pop_fracs)
+    
+    bottom_bundles_df <- data.frame(Bundle_Size = 1:max_bundle_size, 
+                                    Alignment_Frequency = bottom_frequencies, 
+                                    Type = "Bottom Bundles", 
+                                    Bundle_Pop_Frac = bottom_bundle_pop_fracs)
+    
+    # Combine the data frames
+    rbind(top_bundles_df, bottom_bundles_df)
+  }
   
+  # Calculate alignment frequencies for bundle sizes from 1 to 10 using Voter_Frac
+  alignment_frequencies_df_voter <- calculate_alignment_frequencies_voter(10)
+  
+  # Plot the alignment frequencies with Bundle_Size and add text labels for Bundle_Pop_Frac
+  ggplot(alignment_frequencies_df_voter, aes(x = Bundle_Size, y = Alignment_Frequency, color = Type)) +
+    geom_line() +
+    geom_point() +
+    geom_text(aes(label = round(Bundle_Pop_Frac, 2)), 
+              data = alignment_frequencies_df_voter %>% filter(Type == "Top Bundles"), 
+              vjust = -1.5, color = "blue") +
+    geom_text(aes(label = round(Bundle_Pop_Frac, 2)), 
+              data = alignment_frequencies_df_voter %>% filter(Type == "Bottom Bundles"), 
+              vjust = 1.5, color = "red") +
+    scale_x_continuous(breaks = 1:10, labels = as.character(1:10)) +  # Adjust x-axis to show only integer breaks
+    labs(title = "E.C. Alignment Frequency for Top and Bottom States by Voter Fraction",
+         x = "Bundle Size (Voter Fraction Labeled)",
+         y = "Alignment Frequency",
+         color = "Bundle Type") +
+    theme_minimal()
   
   
   
