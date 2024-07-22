@@ -896,7 +896,8 @@ head(alignment_frequencies_df_bottom)
          x = "Bundle Size (Voter Fraction Labeled)",
          y = "Alignment Frequency",
          color = "Bundle Type") +
-    theme_minimal()
+    theme_minimal()+
+    theme(text=element_text(size=12,  family="Times New Roman"))
   
   
   
