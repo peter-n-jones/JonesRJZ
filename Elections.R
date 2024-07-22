@@ -557,13 +557,9 @@ head(alignment_frequencies_df_bottom)
   
 
 #### now swing state thing
+  # Define thresholds
+  thresholds <- c(1, 2, 3, 4, 5)
   
-  # how many swing states by either metric?
-  
-  sum(elections$Gap <= 1)
-  
-  sum(elections$Gap <= 2)
-
   # Ensure Year is numeric
   elections$Year <- as.numeric(elections$Year)
   
@@ -571,29 +567,74 @@ head(alignment_frequencies_df_bottom)
   elections <- elections %>%
     arrange(State, Year)
   
-  # Create swing_state_1 (previous election)
-  elections$swing_state_1 <- c(FALSE, elections$State[-1] == 
-                                 elections$State[-nrow(elections)] & 
-                                 elections$Gap[-nrow(elections)] < 1)
+  # Initialize lists to store results
+  alignment_results_1 <- list()
+  alignment_results_2 <- list()
   
-  # Create swing_state_2
-  elections$swing_state_2 <- elections$Gap < 1
-  View(elections)
-
-  # table with average alignment
-  alignment_summary_1 <- elections %>%
-    group_by(swing_state_1) %>%
-    summarise(Average_Alignment = mean(alignment, na.rm = TRUE))
-  colnames(alignment_summary_1) <- c("Swing State Defined by Previous Election Gap <1%", 
-                                     "Average Alignment")
-
+  # Loop over each threshold
+  for (threshold in thresholds) {
+    # Create swing_state_1 (previous election)
+    elections$swing_state_1 <- c(FALSE, elections$State[-1] == 
+                                   elections$State[-nrow(elections)] & 
+                                   elections$Gap[-nrow(elections)] < threshold)
+    
+    # Create swing_state_2
+    elections$swing_state_2 <- elections$Gap < threshold
+    
+    # Calculate mean alignment for swing_state_1
+    alignment_summary_1 <- elections %>%
+      group_by(swing_state_1) %>%
+      summarise(Average_Alignment = mean(alignment, na.rm = TRUE)) %>%
+      mutate(Threshold = threshold)
+    
+    # Calculate mean alignment for swing_state_2
+    alignment_summary_2 <- elections %>%
+      group_by(swing_state_2) %>%
+      summarise(Average_Alignment = mean(alignment, na.rm = TRUE)) %>%
+      mutate(Threshold = threshold)
+    
+    # Store results in lists
+    alignment_results_1[[as.character(threshold)]] <- alignment_summary_1
+    alignment_results_2[[as.character(threshold)]] <- alignment_summary_2
+  }
   
-  # Calculate mean alignment for swing_state_2
-  alignment_summary_2 <- elections %>%
-    group_by(swing_state_2) %>%
-    summarise(Average_Alignment = mean(alignment, na.rm = TRUE))
-  colnames(alignment_summary_2) <- c("Swing State Defined by Current Election Gap <1%", 
-                                     "Average Alignment")
+  # Combine results into data frames for swing_state_1 and swing_state_2
+  alignment_summary_1_df <- bind_rows(alignment_results_1)
+  alignment_summary_2_df <- bind_rows(alignment_results_2)
+  
+  # Rename columns for better readability
+  colnames(alignment_summary_1_df) <- c("Swing_State_1", "Average_Alignment", "Threshold")
+  colnames(alignment_summary_2_df) <- c("Swing_State_2", "Average_Alignment", "Threshold")
+  
+  # View results
+  View(alignment_summary_1_df)
+  View(alignment_summary_2_df)
+  
+  ##MAKE SWING STATE FIGURE
+  
+  # Prepare data for plotting
+  alignment_summary_1_df <- alignment_summary_1_df %>%
+    mutate(Type = ifelse(Swing_State_1, "Swing State, Previous Year", "Non-Swing State, Previous Year"))
+  
+  alignment_summary_2_df <- alignment_summary_2_df %>%
+    mutate(Type = ifelse(Swing_State_2, "Swing State, Current Year", "Non-Swing State, Current Year"))
+  
+  combined_df <- bind_rows(
+    alignment_summary_1_df %>% select(Threshold, Average_Alignment, Type),
+    alignment_summary_2_df %>% select(Threshold, Average_Alignment, Type)
+  )
+  
+  ggplot(combined_df, aes(x = Threshold, y = Average_Alignment, color = Type, group = Type)) +
+    geom_line() +
+    geom_point() +
+    scale_x_continuous(breaks = thresholds) +
+    labs(title = "Average Alignment for Different Swing State Definitions and Thresholds",
+         x = "Swing State Definition Threshold (%)",
+         y = "Average Alignment",
+         color = "Swing State Type") +
+    scale_color_manual(values = c("Swing State, Previous Year" = "green", "Non-Swing State, Previous Year" = "red", 
+                                  "Swing State, Current Year" = "green", "Non-Swing State, Current Year" = "red")) +
+    theme_minimal()
   
   
 ### LOAD IN POPULATION DATA
