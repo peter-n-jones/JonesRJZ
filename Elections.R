@@ -813,15 +813,15 @@ head(alignment_frequencies_df_bottom)
     top_alignment_frequencies %>% mutate(Type = "Top Bundles"),
     bottom_alignment_frequencies %>% mutate(Type = "Bottom Bundles")
   ) %>%
-    left_join(top_pop_fractions, by = "Bundle_Size") %>%
-    left_join(bottom_pop_fractions, by = "Bundle_Size", suffix = c("_Top", "_Bottom"))
+    left_join(top_pop_frac, by = "Bundle_Size") %>%
+    left_join(bottom_pop_frac, by = "Bundle_Size", suffix = c("_Top", "_Bottom"))
   
   # Plot the alignment frequencies with Bundle_Size and add text labels for Bundle_Pop_Frac
   ggplot(alignment_frequencies_combined, aes(x = Bundle_Size, y = Alignment_Frequency, color = Type)) +
     geom_line() +
     geom_point() +
-    geom_text(aes(label = round(Bundle_Pop_Frac_Top, 2)), data = alignment_frequencies_combined %>% filter(Type == "Top Bundles"), vjust = -1.5, color = "blue") +
-    geom_text(aes(label = round(Bundle_Pop_Frac_Bottom, 2)), data = alignment_frequencies_combined %>% filter(Type == "Bottom Bundles"), vjust = 1.5, color = "red") +
+    geom_text(aes(label = round(Average_Pop_Frac_Top, 2)), data = alignment_frequencies_combined %>% filter(Type == "Top Bundles"), vjust = -1.5, color = "blue") +
+    geom_text(aes(label = round(Average_Pop_Frac_Bottom, 2)), data = alignment_frequencies_combined %>% filter(Type == "Bottom Bundles"), vjust = 1.5, color = "red") +
     scale_x_continuous(breaks = 1:10, labels = as.character(1:10)) +  # Adjust x-axis to show only integer breaks
     labs(title = "E.C. Alignment Frequency for Top and Bottom States by Population Fraction",
          x = "Bundle Size (Popn. Percent Labeled)",
